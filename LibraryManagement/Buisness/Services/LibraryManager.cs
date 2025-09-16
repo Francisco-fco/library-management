@@ -7,10 +7,12 @@ namespace LibraryManagement.Buisness.Services
     public class LibraryManager : ILibraryManager
     {
         private readonly IBookRepository _bookRepository;
+        private readonly IMemberRepository _memberRepository;
 
-        public LibraryManager(IBookRepository bookRepository)
+        public LibraryManager(IBookRepository bookRepository, IMemberRepository memberRepository)
         {
             _bookRepository = bookRepository;
+            _memberRepository = memberRepository;
         }
 
         public BorrowingResult? BorrowBook(Member member, Book book, List<BorrowedBook> currentBooks)
@@ -30,9 +32,14 @@ namespace LibraryManagement.Buisness.Services
             return _bookRepository.GetAllBooks();
         }
 
-        public List<Book> GetAvailableBooks()
+        public List<Member> GetAllMembers()
         {
-            return _bookRepository.GetAvailableBooks();
+            return _memberRepository.GetAllMembers();
+        }
+
+        public Member? GetMemberById(int memberId)
+        {
+            return _memberRepository.GetMemberById(memberId);
         }
     }
 }

@@ -12,6 +12,7 @@ namespace LibraryManagement.Buisness.Interfaces
         BorrowingResult? BorrowBook(Member member, Book book, List<BorrowedBook> currentBooks);
         ReturnResult? ReturnBook(BorrowedBook borrowedBook, DateTime returnDate);
         List<Book> GetAllBooks();
-        List<Book> GetAvailableBooks();
+        List<Member> GetAllMembers();
+        Member? GetMemberById(int memberId);
     }
 }
