@@ -15,6 +15,6 @@ class Program
         
         Menu menu = new Menu(libraryManager);
         
-        menu.SelectMember();
+        menu.RunApplication();
     }
 }

@@ -32,6 +32,16 @@ namespace LibraryManagement.Buisness.Services
             return _bookRepository.GetAllBooks();
         }
 
+        public List<Book> GetAvailableBooks()
+        {
+            return _bookRepository.GetAvailableBooks();
+        }
+
+        public Book? GetBookById(int bookId)
+        {
+            return _bookRepository.GetBookById(bookId);
+        }
+
         public List<Member> GetAllMembers()
         {
             return _memberRepository.GetAllMembers();

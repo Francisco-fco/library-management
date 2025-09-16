@@ -1,9 +1,10 @@
 ﻿using LibraryManagement.Buisness.Interfaces;
+using LibraryManagement.Common.Helpers;
 using LibraryManagement.Common.Models;
 
 namespace LibraryManagement.Buisness.Services
 {
-    public class Menu
+    public class Menu : IMenu
     {
         private readonly ILibraryManager _libraryManager;
         private Member? _currentMember;
@@ -12,7 +13,65 @@ namespace LibraryManagement.Buisness.Services
         {
             _libraryManager = libraryManager;
         }
-        public void SelectMember()
+
+        public void RunApplication()
+        {
+            Console.WriteLine("== Library Management ==");
+
+            SelectMember();
+            bool running = true;
+
+            while (running)
+            {
+                ShowMainMenu();
+                string? choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        ShowAvailableBooks();
+                        break;
+                    case "2":
+                        BorrowBook();
+                        break;
+                    case "0":
+                        running = false;
+                        Console.WriteLine("Thank you for using Library Management System!");
+                        break;
+                    default:
+                        Console.WriteLine("Invalid choice. Please try again.");
+                        break;
+                }
+
+                if (running)
+                {
+                    Console.WriteLine("\nPress any key to continue...");
+                    Console.ReadKey();
+                }
+            }
+        }
+
+        private void ShowMainMenu()
+        {
+            Console.Clear();
+
+            if (_currentMember == null)
+            {
+                Console.WriteLine("== Library Management System ==");
+                Console.WriteLine("No member selected. Please select a member first.");
+                return;
+            }
+
+            string memberType = _currentMember.IsPremium ? "Premium" : "Regular";
+
+            Console.WriteLine($"== Library Management System - {_currentMember.Name} ({memberType}) ==");
+            Console.WriteLine("1. Show available books");
+            Console.WriteLine("2. Borrow book");
+            Console.WriteLine("0. Exit");
+            Console.Write("Choose an option: ");
+        }
+        
+        private void SelectMember()
         {
             Console.WriteLine("\n=== Select Member ===");
 
@@ -49,6 +108,32 @@ namespace LibraryManagement.Buisness.Services
                 Console.WriteLine("Invalid input. Using default member.");
                 _currentMember = _libraryManager.GetAllMembers().First();
             }
+        }
+        
+        private void ShowAvailableBooks()
+        {
+            if (_currentMember == null) return;
+
+            Console.WriteLine("\n=== Available Books ===");
+            List<Book> availableBooks = _libraryManager.GetAvailableBooks();
+
+            if (!availableBooks.Any())
+            {
+                Console.WriteLine("No books are currently available.");
+                return;
+            }
+
+            Console.WriteLine("ID | Title");
+            Console.WriteLine("---|---------------------------------------");
+            foreach (Book book in availableBooks)
+            {
+                Console.WriteLine($"{book.BookId,2} | {book.Title}");
+            }
+        }
+        
+        private void BorrowBook() 
+        {
+            Console.WriteLine("\nBorrow Book ");
         }
     }
 }
