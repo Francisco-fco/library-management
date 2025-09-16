@@ -9,13 +9,13 @@ namespace LibraryManagement.Buisness.Services
     {
         private readonly IBookRepository _bookRepository;
         private readonly IMemberRepository _memberRepository;
-        private readonly List<BorrowedBook> _borrowedBooks;
+        private readonly Dictionary<int, List<BorrowedBook>> _memberBorrowedBooks;
 
         public LibraryManager(IBookRepository bookRepository, IMemberRepository memberRepository)
         {
             _bookRepository = bookRepository;
             _memberRepository = memberRepository;
-            _borrowedBooks = new List<BorrowedBook>();
+            _memberBorrowedBooks = new Dictionary<int, List<BorrowedBook>>();
         }
 
         public BorrowingResult? BorrowBook(Member member, Book book, List<BorrowedBook> currentBooks)
@@ -57,7 +57,12 @@ namespace LibraryManagement.Buisness.Services
 
         public List<BorrowedBook> GetMemberBorrowedBooks(int memberId)
         {
-            return _borrowedBooks.Where(b => !b.IsReturned).ToList();
+            if (!_memberBorrowedBooks.ContainsKey(memberId))
+            {
+                return new List<BorrowedBook>();
+            }
+            
+            return _memberBorrowedBooks[memberId].Where(b => !b.IsReturned).ToList();
         }
 
         public BorrowingResult BorrowBookWithValidation(Member member, int bookId)
@@ -96,6 +101,15 @@ namespace LibraryManagement.Buisness.Services
                 };
             }
 
+            if (!book.IsAvailable)
+            {
+                return new BorrowingResult
+                {
+                    Success = false,
+                    Message = "Book is not available for borrowing.",
+                    CurrentBooks = currentBooks
+                };
+            }
 
             BorrowedBook borrowedBook = new BorrowedBook
             {
@@ -106,7 +120,12 @@ namespace LibraryManagement.Buisness.Services
                 IsReturned = false
             };
 
-            _borrowedBooks.Add(borrowedBook);
+            // Add to member's borrowed books
+            if (!_memberBorrowedBooks.ContainsKey(member.MemberId))
+            {
+                _memberBorrowedBooks[member.MemberId] = new List<BorrowedBook>();
+            }
+            _memberBorrowedBooks[member.MemberId].Add(borrowedBook);
             currentBooks.Add(borrowedBook);
 
             book.IsAvailable = false;
@@ -116,6 +135,66 @@ namespace LibraryManagement.Buisness.Services
                 Success = true,
                 Message = $"Successfully borrowed '{book.Title}'. Due date: {borrowedBook.DueDate:yyyy-MM-dd}",
                 CurrentBooks = currentBooks
+            };
+        }
+
+        public ReturnResult ReturnBookWithValidation(Member member, int bookId)
+        {
+            if (!_memberBorrowedBooks.ContainsKey(member.MemberId))
+            {
+                return new ReturnResult
+                {
+                    Success = false,
+                    Message = "No active loans found for this member.",
+                    LateFee = 0,
+                    DaysLate = 0
+                };
+            }
+
+            BorrowedBook? borrowedBook = _memberBorrowedBooks[member.MemberId]
+                .FirstOrDefault(b => b.BookId == bookId && !b.IsReturned);
+
+            if (borrowedBook == null)
+            {
+                return new ReturnResult
+                {
+                    Success = false,
+                    Message = "No active loan found for this book.",
+                    LateFee = 0,
+                    DaysLate = 0
+                };
+            }
+
+            DateTime returnDate = DateTime.Now;
+            int daysLate = 0;
+            decimal lateFee = 0;
+
+            if (returnDate > borrowedBook.DueDate)
+            {
+                daysLate = (returnDate - borrowedBook.DueDate).Days;
+                lateFee = daysLate * FeeCalculator.LateFeePerDayPerBook;
+            }
+
+            borrowedBook.IsReturned = true;
+
+            Book? book = GetBookById(bookId);
+            if (book != null)
+            {
+                book.IsAvailable = true;
+            }
+
+            string message = $"Successfully returned '{borrowedBook.BookTitle}'.";
+            if (daysLate > 0)
+            {
+                message += $" Book was {daysLate} day(s) late. Late fee: {lateFee:C}";
+            }
+
+            return new ReturnResult
+            {
+                Success = true,
+                Message = message,
+                LateFee = lateFee,
+                DaysLate = daysLate
             };
         }
     }

@@ -34,6 +34,12 @@ namespace LibraryManagement.Buisness.Services
                     case "2":
                         BorrowBook();
                         break;
+                    case "3":
+                        ShowMyBorrowedBooks();
+                        break;
+                    case "4":
+                        ReturnBook();
+                        break;
                     case "0":
                         running = false;
                         Console.WriteLine("Thank you for using Library Management System!");
@@ -67,6 +73,8 @@ namespace LibraryManagement.Buisness.Services
             Console.WriteLine($"== Library Management System - {_currentMember.Name} ({memberType}) ==");
             Console.WriteLine("1. Show available books");
             Console.WriteLine("2. Borrow book");
+            Console.WriteLine("3. Show my borrowed books");
+            Console.WriteLine("4. Return book");
             Console.WriteLine("0. Exit");
             Console.Write("Choose an option: ");
         }
@@ -156,6 +164,109 @@ namespace LibraryManagement.Buisness.Services
                 {
                     int newRemainingCapacity = LoanCalculator.GetRemainingBorrowCapacity(result.CurrentBooks.Count, _currentMember.IsPremium);
                     Console.WriteLine($"Remaining borrowing capacity: {newRemainingCapacity}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Invalid book ID.");
+            }
+        }
+
+        private void ShowMyBorrowedBooks()
+        {
+            if (_currentMember == null) return;
+
+            Console.WriteLine("\n=== My Borrowed Books ===");
+            
+            List<BorrowedBook> borrowedBooks = _libraryManager.GetMemberBorrowedBooks(_currentMember.MemberId);
+            
+            if (!borrowedBooks.Any())
+            {
+                Console.WriteLine("You have no borrowed books.");
+                return;
+            }
+
+            Console.WriteLine("Book ID | Title                                    | Borrowed Date | Due Date   | Status");
+            Console.WriteLine("-----------------------------------------------------------------------------------------");
+            
+            foreach (BorrowedBook borrowedBook in borrowedBooks)
+            {
+                string status = DateTime.Now > borrowedBook.DueDate ? "OVERDUE" : "On Time";
+                int daysOverdue = DateTime.Now > borrowedBook.DueDate ? 
+                    (DateTime.Now - borrowedBook.DueDate).Days : 0;
+                
+                if (daysOverdue > 0)
+                {
+                    status = $"OVERDUE ({daysOverdue} days)";
+                }
+
+                Console.WriteLine($"{borrowedBook.BookId,7} | {borrowedBook.BookTitle,-40} | {borrowedBook.BorrowDate:yyyy-MM-dd}    | {borrowedBook.DueDate:yyyy-MM-dd} | {status}");
+            }
+
+            Console.WriteLine($"\nTotal borrowed books: {borrowedBooks.Count}");
+            
+            int maxBooks = LoanCalculator.GetMaxBooksForMember(_currentMember.IsPremium);
+            int remainingCapacity = LoanCalculator.GetRemainingBorrowCapacity(borrowedBooks.Count, _currentMember.IsPremium);
+            
+            Console.WriteLine($"Borrowing capacity: {borrowedBooks.Count}/{maxBooks} (Remaining: {remainingCapacity})");
+            
+            List<BorrowedBook> overdueBooks = borrowedBooks.Where(b => DateTime.Now > b.DueDate).ToList();
+            if (overdueBooks.Any())
+            {
+                decimal totalLateFees = 0;
+                foreach (BorrowedBook overdueBook in overdueBooks)
+                {
+                    int daysLate = (DateTime.Now - overdueBook.DueDate).Days;
+                    decimal lateFee = daysLate * FeeCalculator.LateFeePerDayPerBook;
+                    totalLateFees += lateFee;
+                }
+                Console.WriteLine($"\nTotal potential late fees: {totalLateFees:C}");
+            }
+        }
+
+        private void ReturnBook()
+        {
+            if (_currentMember == null) return;
+
+            Console.WriteLine("\n=== Return a Book ===");
+            
+            List<BorrowedBook> borrowedBooks = _libraryManager.GetMemberBorrowedBooks(_currentMember.MemberId);
+            
+            if (!borrowedBooks.Any())
+            {
+                Console.WriteLine("You have no books to return.");
+                return;
+            }
+
+            Console.WriteLine("\nYour borrowed books:");
+            Console.WriteLine("Book ID | Title                                    | Due Date   | Status");
+            Console.WriteLine("-------------------------------------------------------------------------");
+            
+            foreach (BorrowedBook borrowedBook in borrowedBooks)
+            {
+                string status = DateTime.Now > borrowedBook.DueDate ? "OVERDUE" : "On Time";
+                int daysOverdue = DateTime.Now > borrowedBook.DueDate ? 
+                    (DateTime.Now - borrowedBook.DueDate).Days : 0;
+                
+                if (daysOverdue > 0)
+                {
+                    status = $"OVERDUE ({daysOverdue} days)";
+                }
+
+                Console.WriteLine($"{borrowedBook.BookId,7} | {borrowedBook.BookTitle,-40} | {borrowedBook.DueDate:yyyy-MM-dd} | {status}");
+            }
+
+            Console.Write("\nEnter book ID to return: ");
+            if (int.TryParse(Console.ReadLine(), out int bookId))
+            {
+                ReturnResult result = _libraryManager.ReturnBookWithValidation(_currentMember, bookId);
+
+                Console.WriteLine($"\nResult: {result.Message}");
+                
+                if (result.Success && result.LateFee > 0)
+                {
+                    Console.WriteLine($"Note: A late fee of {result.LateFee:C} has been added to your account.");
+                    Console.WriteLine($"Your new outstanding balance will be updated accordingly.");
                 }
             }
             else
