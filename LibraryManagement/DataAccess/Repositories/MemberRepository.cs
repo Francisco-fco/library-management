@@ -1,8 +1,9 @@
 ﻿using LibraryManagement.Common.Models;
+using LibraryManagement.DataAccess.Interfaces;
 
 namespace LibraryManagement.DataAccess.Repositories
 {
-    public class MemberRepository
+    public class MemberRepository : IMemberRepository
     {
         private readonly List<Member> _members;
 
