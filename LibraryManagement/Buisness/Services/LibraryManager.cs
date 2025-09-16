@@ -9,13 +9,13 @@ namespace LibraryManagement.Buisness.Services
     {
         private readonly IBookRepository _bookRepository;
         private readonly IMemberRepository _memberRepository;
-        private readonly Dictionary<int, List<BorrowedBook>> _memberBorrowedBooks;
+        private readonly Dictionary<int, List<BorrowedBook>> _newBorrowedBooks;
 
         public LibraryManager(IBookRepository bookRepository, IMemberRepository memberRepository)
         {
             _bookRepository = bookRepository;
             _memberRepository = memberRepository;
-            _memberBorrowedBooks = new Dictionary<int, List<BorrowedBook>>();
+            _newBorrowedBooks = new Dictionary<int, List<BorrowedBook>>();
         }
 
         public BorrowingResult? BorrowBook(Member member, Book book, List<BorrowedBook> currentBooks)
@@ -57,12 +57,14 @@ namespace LibraryManagement.Buisness.Services
 
         public List<BorrowedBook> GetMemberBorrowedBooks(int memberId)
         {
-            if (!_memberBorrowedBooks.ContainsKey(memberId))
+            List<BorrowedBook> existingBooks = _bookRepository.GetMemberBorrowedBooks(memberId);
+            
+            if (_newBorrowedBooks.ContainsKey(memberId))
             {
-                return new List<BorrowedBook>();
+                existingBooks.AddRange(_newBorrowedBooks[memberId].Where(b => !b.IsReturned));
             }
             
-            return _memberBorrowedBooks[memberId].Where(b => !b.IsReturned).ToList();
+            return existingBooks;
         }
 
         public BorrowingResult BorrowBookWithValidation(Member member, int bookId)
@@ -120,12 +122,11 @@ namespace LibraryManagement.Buisness.Services
                 IsReturned = false
             };
 
-            // Add to member's borrowed books
-            if (!_memberBorrowedBooks.ContainsKey(member.MemberId))
+            if (!_newBorrowedBooks.ContainsKey(member.MemberId))
             {
-                _memberBorrowedBooks[member.MemberId] = new List<BorrowedBook>();
+                _newBorrowedBooks[member.MemberId] = new List<BorrowedBook>();
             }
-            _memberBorrowedBooks[member.MemberId].Add(borrowedBook);
+            _newBorrowedBooks[member.MemberId].Add(borrowedBook);
             currentBooks.Add(borrowedBook);
 
             book.IsAvailable = false;
@@ -140,19 +141,13 @@ namespace LibraryManagement.Buisness.Services
 
         public ReturnResult ReturnBookWithValidation(Member member, int bookId)
         {
-            if (!_memberBorrowedBooks.ContainsKey(member.MemberId))
+            List<BorrowedBook> existingBooks = _bookRepository.GetMemberBorrowedBooks(member.MemberId);
+            BorrowedBook? borrowedBook = existingBooks.FirstOrDefault(b => b.BookId == bookId && !b.IsReturned);
+            
+            if (borrowedBook == null && _newBorrowedBooks.ContainsKey(member.MemberId))
             {
-                return new ReturnResult
-                {
-                    Success = false,
-                    Message = "No active loans found for this member.",
-                    LateFee = 0,
-                    DaysLate = 0
-                };
+                borrowedBook = _newBorrowedBooks[member.MemberId].FirstOrDefault(b => b.BookId == bookId && !b.IsReturned);
             }
-
-            BorrowedBook? borrowedBook = _memberBorrowedBooks[member.MemberId]
-                .FirstOrDefault(b => b.BookId == bookId && !b.IsReturned);
 
             if (borrowedBook == null)
             {

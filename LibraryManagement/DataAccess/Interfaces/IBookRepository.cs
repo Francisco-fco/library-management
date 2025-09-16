@@ -7,5 +7,7 @@ namespace LibraryManagement.DataAccess.Interfaces
         List<Book> GetAllBooks();
         List<Book> GetAvailableBooks();
         Book? GetBookById(int bookId);
+        List<BorrowedBook> GetMemberBorrowedBooks(int memberId);
+        List<BorrowedBook> GetMemberOverdueBooks(int memberId);
     }
 }
