@@ -2,7 +2,7 @@
 
 namespace LibraryManagement.DataAccess.Interfaces
 {
-    internal interface IBookRepository
+    public interface IBookRepository
     {
         List<Book> GetAllBooks();
         Book? GetBookById(int bookId);
