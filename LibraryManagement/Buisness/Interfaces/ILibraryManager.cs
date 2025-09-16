@@ -1,0 +1,16 @@
+﻿using LibraryManagement.Common.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace LibraryManagement.Buisness.Interfaces
+{
+    public interface ILibraryManager
+    {
+        BorrowingResult? BorrowBook(Member member, Book book, List<BorrowedBook> currentBooks);
+        ReturnResult? ReturnBook(BorrowedBook borrowedBook, DateTime returnDate);
+
+    }
+}
