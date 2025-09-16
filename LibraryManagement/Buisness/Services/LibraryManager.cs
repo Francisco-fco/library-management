@@ -29,5 +29,10 @@ namespace LibraryManagement.Buisness.Services
         {
             return _bookRepository.GetAllBooks();
         }
+
+        public List<Book> GetAvailableBooks()
+        {
+            return _bookRepository.GetAvailableBooks();
+        }
     }
 }

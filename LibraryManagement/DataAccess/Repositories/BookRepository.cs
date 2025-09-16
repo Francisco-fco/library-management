@@ -35,6 +35,11 @@ namespace LibraryManagement.DataAccess.Repositories
             return _books;
         }
 
+        public List<Book> GetAvailableBooks()
+        {
+            return _books.Where(b => b.IsAvailable).ToList();
+        }
+
         public Book? GetBookById(int bookId)
         {
             return _books.FirstOrDefault(b => b.BookId == bookId);
