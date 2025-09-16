@@ -13,8 +13,10 @@ namespace LibraryManagement.Buisness.Interfaces
         ReturnResult? ReturnBook(BorrowedBook borrowedBook, DateTime returnDate);
         List<Book> GetAllBooks();
         List<Book> GetAvailableBooks();
-        Book? GetBookById(int bookId);
+        Book? GetBookById(int bookId);      
         List<Member> GetAllMembers();
         Member? GetMemberById(int memberId);
+        List<BorrowedBook> GetMemberBorrowedBooks(int memberId);
+        BorrowingResult BorrowBookWithValidation(Member member, int bookId);
     }
 }

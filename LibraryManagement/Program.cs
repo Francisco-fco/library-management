@@ -2,7 +2,6 @@
 using LibraryManagement.Buisness.Services;
 using LibraryManagement.DataAccess.Interfaces;
 using LibraryManagement.DataAccess.Repositories;
-using LibraryManagement.Common.Models;
 
 class Program
 {
@@ -14,7 +13,6 @@ class Program
         ILibraryManager libraryManager = new LibraryManager(bookRepository, memberRepository);
         
         Menu menu = new Menu(libraryManager);
-        
         menu.RunApplication();
     }
 }

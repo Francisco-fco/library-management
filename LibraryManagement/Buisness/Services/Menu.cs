@@ -4,7 +4,7 @@ using LibraryManagement.Common.Models;
 
 namespace LibraryManagement.Buisness.Services
 {
-    public class Menu : IMenu
+    public class Menu
     {
         private readonly ILibraryManager _libraryManager;
         private Member? _currentMember;
@@ -131,9 +131,37 @@ namespace LibraryManagement.Buisness.Services
             }
         }
         
-        private void BorrowBook() 
+        private void BorrowBook()
         {
-            Console.WriteLine("\nBorrow Book ");
+            if (_currentMember == null) return;
+
+            Console.WriteLine("\n=== Borrow a Book ===");
+            
+            ShowAvailableBooks();
+
+            List<Book> availableBooks = _libraryManager.GetAvailableBooks();
+            if (!availableBooks.Any())
+            {
+                return;
+            }
+
+            Console.Write("\nEnter book ID to borrow: ");
+            if (int.TryParse(Console.ReadLine(), out int bookId))
+            {
+                BorrowingResult result = _libraryManager.BorrowBookWithValidation(_currentMember, bookId);
+
+                Console.WriteLine($"\nResult: {result.Message}");
+                
+                if (result.Success)
+                {
+                    int newRemainingCapacity = LoanCalculator.GetRemainingBorrowCapacity(result.CurrentBooks.Count, _currentMember.IsPremium);
+                    Console.WriteLine($"Remaining borrowing capacity: {newRemainingCapacity}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Invalid book ID.");
+            }
         }
     }
 }
